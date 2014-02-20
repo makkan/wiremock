@@ -15,7 +15,32 @@
  */
 package com.github.tomakehurst.wiremock.client;
 
-import com.github.tomakehurst.wiremock.admin.*;
+import static com.github.tomakehurst.wiremock.common.Exceptions.throwUnchecked;
+import static com.github.tomakehurst.wiremock.common.HttpClientUtils.getEntityAsStringAndCloseStream;
+import static java.net.HttpURLConnection.HTTP_CREATED;
+import static java.net.HttpURLConnection.HTTP_OK;
+import static org.apache.http.entity.ContentType.APPLICATION_JSON;
+
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+
+import com.github.tomakehurst.wiremock.admin.AdminTask;
+import com.github.tomakehurst.wiremock.admin.AdminTasks;
+import com.github.tomakehurst.wiremock.admin.FindRequestsTask;
+import com.github.tomakehurst.wiremock.admin.GetRequestCountTask;
+import com.github.tomakehurst.wiremock.admin.GlobalSettingsUpdateTask;
+import com.github.tomakehurst.wiremock.admin.NewStubMappingTask;
+import com.github.tomakehurst.wiremock.admin.RequestSpec;
+import com.github.tomakehurst.wiremock.admin.ResetScenariosTask;
+import com.github.tomakehurst.wiremock.admin.ResetTask;
+import com.github.tomakehurst.wiremock.admin.ResetToDefaultMappingsTask;
+import com.github.tomakehurst.wiremock.admin.RootTask;
+import com.github.tomakehurst.wiremock.admin.SaveMappingsTask;
+import com.github.tomakehurst.wiremock.admin.ShutdownServerTask;
+import com.github.tomakehurst.wiremock.admin.SocketDelayTask;
 import com.github.tomakehurst.wiremock.common.Json;
 import com.github.tomakehurst.wiremock.core.Admin;
 import com.github.tomakehurst.wiremock.global.GlobalSettings;
@@ -26,55 +51,37 @@ import com.github.tomakehurst.wiremock.stubbing.ListStubMappingsResult;
 import com.github.tomakehurst.wiremock.stubbing.StubMapping;
 import com.github.tomakehurst.wiremock.verification.FindRequestsResult;
 import com.github.tomakehurst.wiremock.verification.VerificationResult;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.StringEntity;
-
-import static com.github.tomakehurst.wiremock.common.Exceptions.throwUnchecked;
-import static com.github.tomakehurst.wiremock.common.HttpClientUtils.getEntityAsStringAndCloseStream;
-import static com.github.tomakehurst.wiremock.http.MimeType.JSON;
-import static java.net.HttpURLConnection.HTTP_CREATED;
-import static java.net.HttpURLConnection.HTTP_OK;
-import static org.apache.http.entity.ContentType.APPLICATION_JSON;
 
 public class HttpAdminClient implements Admin {
-	
-	private static final String ADMIN_URL_PREFIX = "http://%s:%d%s/__admin";
 
-	private final String host;
-	private final int port;
-	private final String urlPathPrefix;
-	
-	private final HttpClient httpClient;
-	
-	public HttpAdminClient(String host, int port, String urlPathPrefix) {
-		this.host = host;
-		this.port = port;
-		this.urlPathPrefix = urlPathPrefix;
-		
-		httpClient = HttpClientFactory.createClient();
-	}
-	
-	public HttpAdminClient(String host, int port) {
-		this(host, port, "");
-	}
+    private static final String ADMIN_URL_PREFIX = "http://%s:%d%s/__admin";
 
-	@Override
-	public void addStubMapping(StubMapping stubMapping) {
-        postJsonAssertOkAndReturnBody(
-                urlFor(NewStubMappingTask.class),
-                Json.write(stubMapping),
-                HTTP_CREATED);
-	}
+    private final String host;
+    private final int port;
+    private final String urlPathPrefix;
+
+    private final HttpClient httpClient;
+
+    public HttpAdminClient(String host, int port, String urlPathPrefix) {
+        this.host = host;
+        this.port = port;
+        this.urlPathPrefix = urlPathPrefix;
+
+        httpClient = HttpClientFactory.createClient();
+    }
+
+    public HttpAdminClient(String host, int port) {
+        this(host, port, "");
+    }
+
+    @Override
+    public void addStubMapping(StubMapping stubMapping) {
+        postJsonAssertOkAndReturnBody(urlFor(NewStubMappingTask.class), Json.write(stubMapping), HTTP_CREATED);
+    }
 
     @Override
     public ListStubMappingsResult listAllStubMappings() {
-        String body = getJsonAssertOkAndReturnBody(
-                urlFor(RootTask.class),
-                HTTP_OK);
+        String body = getJsonAssertOkAndReturnBody(urlFor(RootTask.class), HTTP_OK);
         return Json.read(body, ListStubMappingsResult.class);
     }
 
@@ -84,52 +91,40 @@ public class HttpAdminClient implements Admin {
     }
 
     @Override
-	public void resetMappings() {
-		postJsonAssertOkAndReturnBody(urlFor(ResetTask.class), null, HTTP_OK);
-	}
-	
-	@Override
-	public void resetScenarios() {
+    public void resetMappings() {
+        postJsonAssertOkAndReturnBody(urlFor(ResetTask.class), null, HTTP_OK);
+    }
+
+    @Override
+    public void resetScenarios() {
         postJsonAssertOkAndReturnBody(urlFor(ResetScenariosTask.class), null, HTTP_OK);
-	}
+    }
 
     @Override
     public void resetToDefaultMappings() {
         postJsonAssertOkAndReturnBody(urlFor(ResetToDefaultMappingsTask.class), null, HTTP_OK);
     }
 
-	@Override
-	public VerificationResult countRequestsMatching(RequestPattern requestPattern) {
-		String body = postJsonAssertOkAndReturnBody(
-                urlFor(GetRequestCountTask.class),
-                Json.write(requestPattern),
-                HTTP_OK);
-		return VerificationResult.from(body);
-	}
+    @Override
+    public VerificationResult countRequestsMatching(RequestPattern requestPattern) {
+        String body = postJsonAssertOkAndReturnBody(urlFor(GetRequestCountTask.class), Json.write(requestPattern), HTTP_OK);
+        return VerificationResult.from(body);
+    }
 
     @Override
     public FindRequestsResult findRequestsMatching(RequestPattern requestPattern) {
-        String body = postJsonAssertOkAndReturnBody(
-                urlFor(FindRequestsTask.class),
-                Json.write(requestPattern),
-                HTTP_OK);
+        String body = postJsonAssertOkAndReturnBody(urlFor(FindRequestsTask.class), Json.write(requestPattern), HTTP_OK);
         return Json.read(body, FindRequestsResult.class);
     }
 
     @Override
-	public void updateGlobalSettings(GlobalSettings settings) {
-        postJsonAssertOkAndReturnBody(
-                urlFor(GlobalSettingsUpdateTask.class),
-                Json.write(settings),
-                HTTP_OK);
-	}
+    public void updateGlobalSettings(GlobalSettings settings) {
+        postJsonAssertOkAndReturnBody(urlFor(GlobalSettingsUpdateTask.class), Json.write(settings), HTTP_OK);
+    }
 
     @Override
     public void addSocketAcceptDelay(RequestDelaySpec spec) {
-        postJsonAssertOkAndReturnBody(
-                urlFor(SocketDelayTask.class),
-                Json.write(spec),
-                HTTP_OK);
+        postJsonAssertOkAndReturnBody(urlFor(SocketDelayTask.class), Json.write(spec), HTTP_OK);
     }
 
     @Override
@@ -138,17 +133,16 @@ public class HttpAdminClient implements Admin {
     }
 
     private String postJsonAssertOkAndReturnBody(String url, String json, int expectedStatus) {
-		HttpPost post = new HttpPost(url);
-		try {
-			if (json != null) {
-				post.setEntity(new StringEntity(json, APPLICATION_JSON));
-			}
-			HttpResponse response = httpClient.execute(post);
+        HttpPost post = new HttpPost(url);
+        try {
+            if (json != null) {
+                post.setEntity(new StringEntity(json, APPLICATION_JSON));
+            }
+            HttpResponse response = httpClient.execute(post);
             int statusCode = response.getStatusLine().getStatusCode();
-			if (statusCode != expectedStatus) {
-				throw new VerificationException(
-                        "Expected status " + expectedStatus + " for " + url + " but was " + statusCode);
-			}
+            if (statusCode != expectedStatus) {
+                throw new VerificationException("Expected status " + expectedStatus + " for " + url + " but was " + statusCode);
+            }
 
             return getEntityAsStringAndCloseStream(response);
         } catch (Exception e) {
@@ -162,8 +156,7 @@ public class HttpAdminClient implements Admin {
             HttpResponse response = httpClient.execute(get);
             int statusCode = response.getStatusLine().getStatusCode();
             if (statusCode != expectedStatus) {
-                throw new VerificationException(
-                        "Expected status " + expectedStatus + " for " + url + " but was " + statusCode);
+                throw new VerificationException("Expected status " + expectedStatus + " for " + url + " but was " + statusCode);
             }
 
             return getEntityAsStringAndCloseStream(response);

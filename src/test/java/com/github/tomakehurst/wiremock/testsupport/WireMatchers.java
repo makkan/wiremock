@@ -18,7 +18,9 @@ package com.github.tomakehurst.wiremock.testsupport;
 import com.github.tomakehurst.wiremock.common.TextFile;
 import com.github.tomakehurst.wiremock.http.HttpHeader;
 import com.google.common.base.Predicate;
+
 import net.sf.json.test.JSONAssert;
+
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
@@ -33,100 +35,102 @@ import static com.google.common.collect.Iterables.size;
 
 public class WireMatchers {
 
-	public static Matcher<String> equalToJson(final String expectedJson) {
-		return new TypeSafeMatcher<String>() {
+    public static Matcher<String> equalToJson(final String expectedJson) {
+        return new TypeSafeMatcher<String>() {
 
-			@Override
-			public void describeTo(Description desc) {
+            @Override
+            public void describeTo(Description desc) {
                 desc.appendText("Expected:\n" + expectedJson);
-			}
+            }
 
-			@Override
-			public boolean matchesSafely(String actualJson) {
-				try {
-					JSONAssert.assertJsonEquals(expectedJson, actualJson);
-					return true;
-				} catch (Throwable e) {
-					return false;
-				}
-			}
-			
-		};
-	}
+            @Override
+            public boolean matchesSafely(String actualJson) {
+                try {
+                    JSONAssert.assertJsonEquals(expectedJson, actualJson);
+                    return true;
+                } catch (Throwable e) {
+                    return false;
+                }
+            }
+
+        };
+    }
 
     public static Matcher<String> matches(final String regex) {
         return new TypeSafeMatcher<String>() {
-    
+
             @Override
             public void describeTo(Description description) {
                 description.appendText("Should match " + regex);
-                
+
             }
-    
+
             @Override
             public boolean matchesSafely(String actual) {
                 return actual.matches(regex);
             }
-            
+
         };
     }
 
+    @SuppressWarnings("unchecked")
     public static <T> Matcher<Iterable<T>> hasExactly(final Matcher<T>... items) {
-    	return new TypeSafeMatcher<Iterable<T>>() {
+        return new TypeSafeMatcher<Iterable<T>>() {
 
-			@Override
-			public void describeTo(Description desc) {
-				desc.appendText("Collection must match exactly");
-			}
+            @Override
+            public void describeTo(Description desc) {
+                desc.appendText("Collection must match exactly");
+            }
 
-			@Override
-			public boolean matchesSafely(Iterable<T> actual) {
-				Iterator<T> actualIter = actual.iterator();
-				for (Matcher<T> matcher: items) {
-					if (!matcher.matches(actualIter.next())) {
-						return false;
-					}
-				}
-				
-				return !actualIter.hasNext();
-			}
-    		
-    	};
+            @Override
+            public boolean matchesSafely(Iterable<T> actual) {
+                Iterator<T> actualIter = actual.iterator();
+                for (Matcher<T> matcher : items) {
+                    if (!matcher.matches(actualIter.next())) {
+                        return false;
+                    }
+                }
+
+                return !actualIter.hasNext();
+            }
+
+        };
     }
-    
+
+    @SuppressWarnings("unchecked")
     public static <T> Matcher<Iterable<T>> hasExactlyIgnoringOrder(final Matcher<T>... items) {
-    	return new TypeSafeMatcher<Iterable<T>>() {
+        return new TypeSafeMatcher<Iterable<T>>() {
 
-			@Override
-			public void describeTo(Description desc) {
-				desc.appendText("Collection elements must match, but don't have to be in the same order.");
-			}
+            @Override
+            public void describeTo(Description desc) {
+                desc.appendText("Collection elements must match, but don't have to be in the same order.");
+            }
 
-			@Override
-			public boolean matchesSafely(Iterable<T> actual) {
-				if (size(actual) != items.length) {
-					return false;
-				}
-				
-				for (final Matcher<T> matcher: items) {
-					if (find(actual, isMatchFor(matcher), null) == null) {
-						return false;
-					}
-				}
-				
-				return true;
-			}
-    	};
+            @Override
+            public boolean matchesSafely(Iterable<T> actual) {
+                if (size(actual) != items.length) {
+                    return false;
+                }
+
+                for (final Matcher<T> matcher : items) {
+                    if (find(actual, isMatchFor(matcher), null) == null) {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+        };
     }
-    
+
     private static <T> Predicate<T> isMatchFor(final Matcher<T> matcher) {
-    	return new Predicate<T>() {
-			public boolean apply(T input) {
-				return matcher.matches(input);
-			}
-		};
+        return new Predicate<T>() {
+            public boolean apply(T input) {
+                return matcher.matches(input);
+            }
+        };
     }
-    
+
     public static Matcher<TextFile> fileNamed(final String name) {
         return new TypeSafeMatcher<TextFile>() {
 
@@ -138,7 +142,7 @@ public class WireMatchers {
             public boolean matchesSafely(TextFile textFile) {
                 return textFile.name().equals(name);
             }
-            
+
         };
     }
 

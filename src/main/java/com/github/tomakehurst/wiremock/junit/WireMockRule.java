@@ -15,6 +15,16 @@
  */
 package com.github.tomakehurst.wiremock.junit;
 
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
+
+import java.util.List;
+
+import org.junit.rules.MethodRule;
+import org.junit.rules.TestRule;
+import org.junit.runner.Description;
+import org.junit.runners.model.FrameworkMethod;
+import org.junit.runners.model.Statement;
+
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.github.tomakehurst.wiremock.client.RequestPatternBuilder;
@@ -22,16 +32,8 @@ import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.Options;
 import com.github.tomakehurst.wiremock.http.RequestListener;
 import com.github.tomakehurst.wiremock.verification.LoggedRequest;
-import org.junit.rules.MethodRule;
-import org.junit.rules.TestRule;
-import org.junit.runner.Description;
-import org.junit.runners.model.FrameworkMethod;
-import org.junit.runners.model.Statement;
 
-import java.util.List;
-
-import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
-
+@SuppressWarnings("deprecation")
 public class WireMockRule implements MethodRule, TestRule, Stubbing {
 
     private final Options options;
@@ -44,41 +46,41 @@ public class WireMockRule implements MethodRule, TestRule, Stubbing {
     }
 
     public WireMockRule(int port) {
-		this(wireMockConfig().port(port));
-	}
+        this(wireMockConfig().port(port));
+    }
 
     public WireMockRule(int port, Integer httpsPort) {
         this(wireMockConfig().port(port).httpsPort(httpsPort));
     }
-	
-	public WireMockRule() {
-		this(wireMockConfig());
-	}
+
+    public WireMockRule() {
+        this(wireMockConfig());
+    }
 
     @Override
     public Statement apply(final Statement base, Description description) {
         return apply(base, null, null);
     }
 
-	@Override
-	public Statement apply(final Statement base, FrameworkMethod method, Object target) {
-		return new Statement() {
+    @Override
+    public Statement apply(final Statement base, FrameworkMethod method, Object target) {
+        return new Statement() {
 
-			@Override
-			public void evaluate() throws Throwable {
-				wireMockServer = new WireMockServer(options);
-				wireMockServer.start();
-				WireMock.configureFor("localhost", port());
+            @Override
+            public void evaluate() throws Throwable {
+                wireMockServer = new WireMockServer(options);
+                wireMockServer.start();
+                WireMock.configureFor("localhost", port());
                 wireMock = new WireMock("localhost", port());
-				try {
+                try {
                     base.evaluate();
                 } finally {
                     wireMockServer.stop();
                 }
-			}
-			
-		};
-	}
+            }
+
+        };
+    }
 
     public void addMockServiceRequestListener(RequestListener requestListener) {
         wireMockServer.addMockServiceRequestListener(requestListener);

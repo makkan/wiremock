@@ -15,17 +15,19 @@
  */
 package com.github.tomakehurst.wiremock;
 
-import com.github.tomakehurst.wiremock.client.VerificationException;
-import com.github.tomakehurst.wiremock.client.WireMock;
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
-import com.github.tomakehurst.wiremock.verification.RequestJournalDisabledException;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.runners.Enclosed;
-import org.junit.runner.RunWith;
-import org.skyscreamer.jsonassert.JSONCompareMode;
-
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.github.tomakehurst.wiremock.client.WireMock.containing;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
+import static com.github.tomakehurst.wiremock.client.WireMock.findAll;
+import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.matching;
+import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
+import static com.github.tomakehurst.wiremock.client.WireMock.notMatching;
+import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.putRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
+import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static com.github.tomakehurst.wiremock.testsupport.TestHttpHeader.withHeader;
 import static org.hamcrest.Matchers.allOf;
@@ -33,6 +35,16 @@ import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.skyscreamer.jsonassert.JSONCompareMode.LENIENT;
+
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.experimental.runners.Enclosed;
+import org.junit.runner.RunWith;
+
+import com.github.tomakehurst.wiremock.client.VerificationException;
+import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.github.tomakehurst.wiremock.verification.RequestJournalDisabledException;
 
 @RunWith(Enclosed.class)
 public class VerificationAcceptanceTest {
@@ -45,7 +57,7 @@ public class VerificationAcceptanceTest {
             verify(getRequestedFor(urlEqualTo("/this/got/requested")));
         }
 
-        @Test(expected=VerificationException.class)
+        @Test(expected = VerificationException.class)
         public void throwsVerificationExceptionWhenNoMatch() {
             testClient.get("/this/got/requested");
             verify(getRequestedFor(urlEqualTo("/this/did/not")));
@@ -54,79 +66,61 @@ public class VerificationAcceptanceTest {
         @Test
         public void verifiesWithHeaders() {
             testClient.put("/update/this", withHeader("Content-Type", "application/json"), withHeader("Encoding", "UTF-8"));
-            verify(putRequestedFor(urlMatching("/[a-z]+/this"))
-                    .withHeader("Content-Type", equalTo("application/json"))
-                    .withHeader("Encoding", notMatching("LATIN-1")));
+            verify(putRequestedFor(urlMatching("/[a-z]+/this")).withHeader("Content-Type", equalTo("application/json")).withHeader("Encoding",
+                    notMatching("LATIN-1")));
         }
 
         @Test
         public void verifiesWithMultiValueHeaders() {
-            testClient.get("/multi/value/header",
-                    withHeader("X-Thing", "One"),
-                    withHeader("X-Thing", "Two"),
-                    withHeader("X-Thing", "Three"));
+            testClient.get("/multi/value/header", withHeader("X-Thing", "One"), withHeader("X-Thing", "Two"), withHeader("X-Thing", "Three"));
 
-            verify(getRequestedFor(urlEqualTo("/multi/value/header"))
-                .withHeader("X-Thing", equalTo("Two"))
-                .withHeader("X-Thing", matching("Thr.*")));
+            verify(getRequestedFor(urlEqualTo("/multi/value/header")).withHeader("X-Thing", equalTo("Two")).withHeader("X-Thing", matching("Thr.*")));
 
-            verify(getRequestedFor(urlEqualTo("/multi/value/header"))
-                    .withHeader("X-Thing", equalTo("Three")));
+            verify(getRequestedFor(urlEqualTo("/multi/value/header")).withHeader("X-Thing", equalTo("Three")));
         }
 
-        @Test(expected=VerificationException.class)
+        @Test(expected = VerificationException.class)
         public void throwsVerificationExceptionWhenHeadersDoNotMatch() {
             testClient.put("/to/modify", withHeader("Content-Type", "application/json"), withHeader("Encoding", "LATIN-1"));
-            verify(putRequestedFor(urlEqualTo("/to/modify"))
-                    .withHeader("Content-Type", equalTo("application/json"))
-                    .withHeader("Encoding", notMatching("LATIN-1")));
+            verify(putRequestedFor(urlEqualTo("/to/modify")).withHeader("Content-Type", equalTo("application/json")).withHeader("Encoding",
+                    notMatching("LATIN-1")));
         }
 
-
-        private static final String SAMPLE_JSON =
-            "{ 													\n" +
-            "	\"thing\": {									\n" +
-            "		\"importantKey\": \"Important value\",		\n" +
-            "	}												\n" +
-            "}													";
+        private static final String SAMPLE_JSON = "{ 													\n" + "	\"thing\": {									\n" + "		\"importantKey\": \"Important value\",		\n"
+                + "	}												\n" + "}													";
 
         @Test
         public void verifiesWithBody() {
             testClient.postWithBody("/add/this", SAMPLE_JSON, "application/json", "utf-8");
-            verify(postRequestedFor(urlEqualTo("/add/this"))
-                    .withRequestBody(matching(".*\"importantKey\": \"Important value\".*")));
+            verify(postRequestedFor(urlEqualTo("/add/this")).withRequestBody(matching(".*\"importantKey\": \"Important value\".*")));
         }
 
         @Test
         public void verifiesWithBodyContainingJson() {
             testClient.postWithBody("/body/contains", SAMPLE_JSON, "application/json", "utf-8");
-            verify(postRequestedFor(urlEqualTo("/body/contains"))
-                    .withRequestBody(matchingJsonPath("$.thing"))
-                    .withRequestBody(matchingJsonPath("$..*[?(@.importantKey == 'Important value')]")));
+            verify(postRequestedFor(urlEqualTo("/body/contains")).withRequestBody(matchingJsonPath("$.thing")).withRequestBody(
+                    matchingJsonPath("$..*[?(@.importantKey == 'Important value')]")));
         }
 
         @Test
         public void verifiesWithBodyEquallingJson() {
             testClient.postWithBody("/body/json", SAMPLE_JSON, "application/json", "utf-8");
-            verify(postRequestedFor(urlEqualTo("/body/json"))
-                    .withRequestBody(equalToJson(SAMPLE_JSON)));
+            verify(postRequestedFor(urlEqualTo("/body/json")).withRequestBody(equalToJson(SAMPLE_JSON)));
         }
 
         @Test
         public void verifiesWithBodyEquallingJsonWithCompareMode() {
             testClient.postWithBody("/body/json/lenient", "{ \"message\": \"Hello\", \"key\": \"welcome.message\" }", "application/json", "utf-8");
-            verify(postRequestedFor(urlEqualTo("/body/json/lenient"))
-                    .withRequestBody(equalToJson("{ \"message\": \"Hello\" }", LENIENT)));
+            verify(postRequestedFor(urlEqualTo("/body/json/lenient")).withRequestBody(equalToJson("{ \"message\": \"Hello\" }", LENIENT)));
         }
 
         @Test
         public void verifiesWithBodyContaining() {
             testClient.postWithBody("/body/json", SAMPLE_JSON, "application/json", "utf-8");
-            verify(postRequestedFor(urlEqualTo("/body/json"))
-                    .withRequestBody(containing("Important value")));
+            verify(postRequestedFor(urlEqualTo("/body/json")).withRequestBody(containing("Important value")));
         }
 
-        @Test(expected=VerificationException.class)
+        @Test(expected = VerificationException.class)
         public void resetErasesCounters() {
             testClient.get("/count/this");
             testClient.get("/count/this");
@@ -150,16 +144,13 @@ public class VerificationAcceptanceTest {
         @Test
         public void verifiesHeaderAbsent() {
             testClient.get("/without/header", withHeader("Content-Type", "application/json"));
-            verify(getRequestedFor(urlEqualTo("/without/header"))
-                    .withHeader("Content-Type", equalTo("application/json"))
-                    .withoutHeader("Accept"));
+            verify(getRequestedFor(urlEqualTo("/without/header")).withHeader("Content-Type", equalTo("application/json")).withoutHeader("Accept"));
         }
 
-        @Test(expected=VerificationException.class)
+        @Test(expected = VerificationException.class)
         public void failsVerificationWhenAbsentHeaderPresent() {
             testClient.get("/without/another/header", withHeader("Content-Type", "application/json"));
-            verify(getRequestedFor(urlEqualTo("/without/another/header"))
-                    .withoutHeader("Content-Type"));
+            verify(getRequestedFor(urlEqualTo("/without/another/header")).withoutHeader("Content-Type"));
         }
 
         @Test
@@ -171,11 +162,10 @@ public class VerificationAcceptanceTest {
                 verify(getRequestedFor(urlEqualTo("/specific/thing")));
                 fail();
             } catch (VerificationException e) {
-                assertThat(e.getMessage(), allOf(
-                        containsString("Expected at least one request matching: {"),
-                        containsString("/specific/thing"),
-                        containsString("Requests received: "),
-                        containsString("/some/request")));
+                assertThat(
+                        e.getMessage(),
+                        allOf(containsString("Expected at least one request matching: {"), containsString("/specific/thing"),
+                                containsString("Requests received: "), containsString("/some/request")));
             }
         }
 
@@ -188,11 +178,10 @@ public class VerificationAcceptanceTest {
                 verify(14, getRequestedFor(urlEqualTo("/specific/thing")));
                 fail();
             } catch (VerificationException e) {
-                assertThat(e.getMessage(), allOf(
-                        containsString("Expected exactly 14 requests matching: {"),
-                        containsString("/specific/thing"),
-                        containsString("Requests received: "),
-                        containsString("/some/request")));
+                assertThat(
+                        e.getMessage(),
+                        allOf(containsString("Expected exactly 14 requests matching: {"), containsString("/specific/thing"),
+                                containsString("Requests received: "), containsString("/some/request")));
             }
         }
     }
@@ -202,12 +191,12 @@ public class VerificationAcceptanceTest {
         @Rule
         public WireMockRule wireMockRule = new WireMockRule(wireMockConfig().disableRequestJournal());
 
-        @Test(expected=RequestJournalDisabledException.class)
+        @Test(expected = RequestJournalDisabledException.class)
         public void verifyThrowsExceptionWhenVerificationAttemptedAndRequestJournalDisabled() {
             verify(getRequestedFor(urlEqualTo("/whatever")));
         }
 
-        @Test(expected=RequestJournalDisabledException.class)
+        @Test(expected = RequestJournalDisabledException.class)
         public void findAllThrowsExceptionWhenVerificationAttemptedAndRequestJournalDisabled() {
             findAll(getRequestedFor(urlEqualTo("/whatever")));
         }

@@ -15,23 +15,22 @@
  */
 package com.github.tomakehurst.wiremock;
 
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
-import com.github.tomakehurst.wiremock.testsupport.MappingJsonSamples;
-import com.github.tomakehurst.wiremock.testsupport.WireMockResponse;
-import com.github.tomakehurst.wiremock.testsupport.WireMockTestClient;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.hasProperty;
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import com.github.tomakehurst.wiremock.testsupport.MappingJsonSamples;
+import com.github.tomakehurst.wiremock.testsupport.WireMockResponse;
+import com.github.tomakehurst.wiremock.testsupport.WireMockTestClient;
 
 public class PortNumberTest {
 

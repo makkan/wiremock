@@ -15,16 +15,15 @@
  */
 package com.github.tomakehurst.wiremock.client;
 
-import com.github.tomakehurst.wiremock.matching.ValuePattern;
-import com.google.common.base.Function;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 
-import java.util.List;
+import com.github.tomakehurst.wiremock.matching.ValuePattern;
+import com.google.common.base.Function;
 
 public class ValueMatchingStrategy {
 
-	private String equalTo;
-	private String equalToJson;
+    private String equalTo;
+    private String equalToJson;
     private JSONCompareMode jsonCompareMode;
     private String matches;
     private String doesNotMatch;
@@ -32,32 +31,32 @@ public class ValueMatchingStrategy {
     private String matchesJsonPath;
 
     public ValuePattern asValuePattern() {
-		ValuePattern pattern = new ValuePattern();
-		pattern.setEqualTo(equalTo);
-		pattern.setEqualToJson(equalToJson);
+        ValuePattern pattern = new ValuePattern();
+        pattern.setEqualTo(equalTo);
+        pattern.setEqualToJson(equalToJson);
         pattern.setJsonCompareMode(jsonCompareMode);
-		pattern.setMatches(matches);
-		pattern.setDoesNotMatch(doesNotMatch);
-		pattern.setContains(contains);
+        pattern.setMatches(matches);
+        pattern.setDoesNotMatch(doesNotMatch);
+        pattern.setContains(contains);
         pattern.setMatchesJsonPaths(matchesJsonPath);
-		return pattern;
-	}
-	
-	public String getContains() {
-		return contains;
-	}
+        return pattern;
+    }
 
-	public void setContains(String contains) {
-		this.contains = contains;
-	}
+    public String getContains() {
+        return contains;
+    }
 
-	public static Function<ValueMatchingStrategy, ValuePattern> toValuePattern = new Function<ValueMatchingStrategy, ValuePattern>() {
-		public ValuePattern apply(ValueMatchingStrategy input) {
-			return input.asValuePattern();
-		}
-	};
-	
-	public String getEqualToJson() {
+    public void setContains(String contains) {
+        this.contains = contains;
+    }
+
+    public static Function<ValueMatchingStrategy, ValuePattern> toValuePattern = new Function<ValueMatchingStrategy, ValuePattern>() {
+        public ValuePattern apply(ValueMatchingStrategy input) {
+            return input.asValuePattern();
+        }
+    };
+
+    public String getEqualToJson() {
         return equalToJson;
     }
 
@@ -69,29 +68,29 @@ public class ValueMatchingStrategy {
         this.jsonCompareMode = jsonCompareMode;
     }
 
-	public String getEqualTo() {
-		return equalTo;
-	}
+    public String getEqualTo() {
+        return equalTo;
+    }
 
-	public void setEqualTo(String equalTo) {
-		this.equalTo = equalTo;
-	}
+    public void setEqualTo(String equalTo) {
+        this.equalTo = equalTo;
+    }
 
-	public String getMatches() {
-		return matches;
-	}
+    public String getMatches() {
+        return matches;
+    }
 
-	public void setMatches(String matches) {
-		this.matches = matches;
-	}
+    public void setMatches(String matches) {
+        this.matches = matches;
+    }
 
-	public String getDoesNotMatch() {
-		return doesNotMatch;
-	}
+    public String getDoesNotMatch() {
+        return doesNotMatch;
+    }
 
-	public void setDoesNotMatch(String doesNotMatch) {
-		this.doesNotMatch = doesNotMatch;
-	}
+    public void setDoesNotMatch(String doesNotMatch) {
+        this.doesNotMatch = doesNotMatch;
+    }
 
     public void setJsonMatchesPath(String jsonPaths) {
         this.matchesJsonPath = jsonPaths;

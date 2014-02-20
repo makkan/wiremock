@@ -15,20 +15,32 @@
  */
 package com.github.tomakehurst.wiremock;
 
-import com.github.tomakehurst.wiremock.client.VerificationException;
-import com.github.tomakehurst.wiremock.http.Fault;
-import com.github.tomakehurst.wiremock.testsupport.WireMockResponse;
-import com.github.tomakehurst.wiremock.verification.LoggedRequest;
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.containing;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.matching;
+import static com.github.tomakehurst.wiremock.client.WireMock.notMatching;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.put;
+import static com.github.tomakehurst.wiremock.client.WireMock.putRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
+import static com.github.tomakehurst.wiremock.client.WireMock.verify;
+import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.junit.Assert.assertThat;
+
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.util.List;
-
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
-import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
-import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.assertThat;
+import com.github.tomakehurst.wiremock.client.VerificationException;
+import com.github.tomakehurst.wiremock.http.Fault;
+import com.github.tomakehurst.wiremock.testsupport.WireMockResponse;
 
 @Ignore("Run when validating documentation")
 public class Examples extends AcceptanceTestBase {
@@ -117,12 +129,7 @@ public class Examples extends AcceptanceTestBase {
     public void verifyWithoutHeader() {
         verify(putRequestedFor(urlEqualTo("/without/header")).withoutHeader("Content-Type"));
     }
-
-    @Test
-    public void findingRequests() {
-        List<LoggedRequest> requests = findAll(putRequestedFor(urlMatching("/api/.*")));
-    }
-
+   
     @Test
     public void proxying() {
         stubFor(get(urlMatching("/other/service/.*"))
