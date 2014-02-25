@@ -18,10 +18,13 @@ package com.github.tomakehurst.wiremock.stubbing;
 import com.github.tomakehurst.wiremock.http.Request;
 import com.github.tomakehurst.wiremock.http.ResponseDefinition;
 import com.google.common.base.Predicate;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.github.tomakehurst.wiremock.common.LocalNotifier.notifier;
 import static com.github.tomakehurst.wiremock.http.ResponseDefinition.copyOf;
@@ -40,7 +43,30 @@ public class InMemoryStubMappings implements StubMappings {
         notifyIfResponseNotConfigured(request, matchingMapping);
         matchingMapping.updateScenarioStateIfRequired();
 
-        return copyOf(matchingMapping.getResponse());
+        ResponseDefinition responseDefinition = copyOf(matchingMapping.getResponse());
+        setCaptureForResponseBody(matchingMapping, request, responseDefinition);
+
+        return responseDefinition;
+    }
+
+    private void setCaptureForResponseBody(StubMapping matchingMapping, Request request, ResponseDefinition responseDefinition) {
+        if (!Strings.isNullOrEmpty(matchingMapping.getRequest().getUrlCapture())) {
+            String matchRegxep = matchingMapping.getRequest().getUrlCapture();
+            String matchString = request.getUrl();
+            Pattern pattern = Pattern.compile(matchRegxep);
+            Matcher matcher = pattern.matcher(matchString);
+            String replaceBody = responseDefinition.getBody();
+            if (matcher.find()) {
+                int index = 0;
+                while (index < matcher.groupCount()) {
+                    index++;
+                    String capture = matcher.group(index);
+                    String target = "$" + index;
+                    replaceBody = replaceBody.replace(target, capture);
+                }
+            }
+            responseDefinition.setBody(replaceBody);
+        }
     }
 
     private void notifyIfResponseNotConfigured(Request request, StubMapping matchingMapping) {

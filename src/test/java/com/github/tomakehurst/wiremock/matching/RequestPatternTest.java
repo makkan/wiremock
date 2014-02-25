@@ -55,4 +55,31 @@ public class RequestPatternTest {
         Assert.assertTrue(requestPattern.isMatchedBy(request));
     }
 
+    @Test
+    public void shouldMatchUrlCapture() {
+        StubMapping stubMapping = StubMapping
+                .buildFrom("{ \"request\": { \"urlCapture\": \"/nagios/(.*)\", \"method\": \"GET\" }, \"response\": { \"status\": 200, \"body\": \"Wiremock is alive\"}}");
+        RequestPattern requestPattern = stubMapping.getRequest();
+
+        HttpServletRequest httpServletRequest = mock(HttpServletRequest.class);
+        when(httpServletRequest.getRequestURI()).thenReturn("/nagios/test");
+        when(httpServletRequest.getMethod()).thenReturn("GET");
+
+        Request request = new HttpServletRequestAdapter(httpServletRequest);
+        Assert.assertTrue(requestPattern.isMatchedBy(request));
+    }
+
+    @Test
+    public void shouldNotMatchUrlCatpure() {
+        StubMapping stubMapping = StubMapping
+                .buildFrom("{ \"request\": { \"urlCapture\": \"/nagios/(.*)\", \"method\": \"GET\" }, \"response\": { \"status\": 200, \"body\": \"Wiremock is alive\"}}");
+        RequestPattern requestPattern = stubMapping.getRequest();
+
+        HttpServletRequest httpServletRequest = mock(HttpServletRequest.class);
+        when(httpServletRequest.getRequestURI()).thenReturn("/nagios");
+        when(httpServletRequest.getMethod()).thenReturn("GET");
+
+        Request request = new HttpServletRequestAdapter(httpServletRequest);
+        Assert.assertFalse(requestPattern.isMatchedBy(request));
+    }
 }

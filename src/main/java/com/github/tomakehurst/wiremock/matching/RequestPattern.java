@@ -98,7 +98,7 @@ public class RequestPattern {
         if (urlPattern == null && urlCapture == null) {
             matched = url.equals(candidateUrl);
         } else if (urlCapture != null) {
-            matched = candidateUrl.matches(url);
+            matched = candidateUrl.matches(urlCapture);
         } else {
             matched = candidateUrl.matches(urlPattern);
         }

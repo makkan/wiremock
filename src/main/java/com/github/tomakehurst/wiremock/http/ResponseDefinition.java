@@ -25,6 +25,9 @@ import static javax.xml.bind.DatatypeConverter.printBase64Binary;
 
 import java.nio.charset.Charset;
 
+import org.apache.commons.lang.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -139,8 +142,6 @@ public class ResponseDefinition {
         body = parseBase64Binary(base64Body);
     }
 
-    // Needs to be explicitly marked as a property, since an overloaded setter with the same
-    // name is marked as ignored (see currently open JACKSON-783 bug)
     @JsonProperty
     public void setBody(final String body) {
         this.body = (body != null) ? body.getBytes(Charset.forName(UTF_8.name())) : null;
@@ -236,99 +237,12 @@ public class ResponseDefinition {
 
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((body == null) ? 0 : body.hashCode());
-        result = prime * result + ((bodyFileName == null) ? 0 : bodyFileName.hashCode());
-        result = prime * result + ((fault == null) ? 0 : fault.hashCode());
-        result = prime * result + ((fixedDelayMilliseconds == null) ? 0 : fixedDelayMilliseconds.hashCode());
-        result = prime * result + ((headers == null) ? 0 : headers.hashCode());
-        result = prime * result + ((originalRequest == null) ? 0 : originalRequest.hashCode());
-        result = prime * result + ((proxyBaseUrl == null) ? 0 : proxyBaseUrl.hashCode());
-        result = prime * result + status;
-        result = prime * result + (wasConfigured ? 1231 : 1237);
-        return result;
+        return HashCodeBuilder.reflectionHashCode(this);
     }
 
     @Override
     public boolean equals(final Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        final ResponseDefinition other = (ResponseDefinition) obj;
-        if (body == null) {
-            if (other.body != null) {
-                return false;
-            }
-        } else if (!byteBodyEquals(body, other.body)) {
-            return false;
-        }
-        if (bodyFileName == null) {
-            if (other.bodyFileName != null) {
-                return false;
-            }
-        } else if (!bodyFileName.equals(other.bodyFileName)) {
-            return false;
-        }
-        if (fault != other.fault) {
-            return false;
-        }
-        if (fixedDelayMilliseconds == null) {
-            if (other.fixedDelayMilliseconds != null) {
-                return false;
-            }
-        } else if (!fixedDelayMilliseconds.equals(other.fixedDelayMilliseconds)) {
-            return false;
-        }
-        if (headers == null) {
-            if (other.headers != null) {
-                return false;
-            }
-        } else if (!headers.equals(other.headers)) {
-            return false;
-        }
-        if (proxyBaseUrl == null) {
-            if (other.proxyBaseUrl != null) {
-                return false;
-            }
-        } else if (!proxyBaseUrl.equals(other.proxyBaseUrl)) {
-            return false;
-        }
-        if (status != other.status) {
-            return false;
-        }
-        if (wasConfigured != other.wasConfigured) {
-            return false;
-        }
-        return true;
-    }
-
-    private static boolean byteBodyEquals(byte[] expecteds, byte[] actuals) {
-        if (expecteds == actuals)
-            return true;
-        if (expecteds == null)
-            return false;
-        if (actuals == null)
-            return false;
-
-        int actualsLength = actuals.length;
-        int expectedsLength = expecteds.length;
-        if (actualsLength != expectedsLength)
-            return false;
-
-        for (int i = 0; i < expectedsLength; i++) {
-            byte expected = expecteds[i];
-            byte actual = actuals[i];
-            if (expected != actual)
-                return false;
-        }
-        return true;
+        return EqualsBuilder.reflectionEquals(this, obj);
     }
 
     @Override
