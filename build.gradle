@@ -31,7 +31,6 @@ dependencies {
     compile ("junit:junit-dep:4.10") {
         exclude group: "org.hamcrest", module: "hamcrest-core"
     }
-
     testCompile "org.hamcrest:hamcrest-all:1.1"
     testCompile ("org.jmock:jmock:2.5.1") {
         exclude group: "junit", module: "junit-dep"
@@ -46,6 +45,7 @@ dependencies {
     testCompile "net.sf.json-lib:json-lib:2.4:jdk15"
     testCompile "com.googlecode.jarjar:jarjar:1.3"
     testCompile "commons-io:commons-io:2.4"
+    testCompile "org.mockito:mockito-all:1.9.5"
 }
 
 test { // Set the timezone for testing somewhere other than my machine to increase the chances of catching timezone bugs

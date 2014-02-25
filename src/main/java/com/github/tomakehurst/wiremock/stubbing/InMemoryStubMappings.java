@@ -28,53 +28,50 @@ import static com.github.tomakehurst.wiremock.http.ResponseDefinition.copyOf;
 import static com.github.tomakehurst.wiremock.stubbing.StubMapping.NOT_CONFIGURED;
 import static com.google.common.collect.Iterables.find;
 
-
 public class InMemoryStubMappings implements StubMappings {
-	
-	private final SortedConcurrentMappingSet mappings = new SortedConcurrentMappingSet();
-	private final ConcurrentHashMap<String, Scenario> scenarioMap = new ConcurrentHashMap<String, Scenario>();
-	
-	@Override
-	public ResponseDefinition serveFor(Request request) {
-		StubMapping matchingMapping = find(
-				mappings,
-				mappingMatchingAndInCorrectScenarioState(request),
-				StubMapping.NOT_CONFIGURED);
-		
-		notifyIfResponseNotConfigured(request, matchingMapping);
-		matchingMapping.updateScenarioStateIfRequired();
-		return copyOf(matchingMapping.getResponse());
-	}
 
-	private void notifyIfResponseNotConfigured(Request request, StubMapping matchingMapping) {
-		if (matchingMapping == NOT_CONFIGURED) {
-		    notifier().info("No mapping found matching URL " + request.getUrl());
-		}
-	}
+    private final SortedConcurrentMappingSet mappings = new SortedConcurrentMappingSet();
+    private final ConcurrentHashMap<String, Scenario> scenarioMap = new ConcurrentHashMap<String, Scenario>();
 
-	@Override
-	public void addMapping(StubMapping mapping) {
-		if (mapping.isInScenario()) {
-			scenarioMap.putIfAbsent(mapping.getScenarioName(), Scenario.inStartedState());
-			Scenario scenario = scenarioMap.get(mapping.getScenarioName());
-			mapping.setScenario(scenario);
-		}
-		
-		mappings.add(mapping);
-	}
+    @Override
+    public ResponseDefinition serveFor(Request request) {
+        StubMapping matchingMapping = find(mappings, mappingMatchingAndInCorrectScenarioState(request), StubMapping.NOT_CONFIGURED);
 
-	@Override
-	public void reset() {
-		mappings.clear();
+        notifyIfResponseNotConfigured(request, matchingMapping);
+        matchingMapping.updateScenarioStateIfRequired();
+
+        return copyOf(matchingMapping.getResponse());
+    }
+
+    private void notifyIfResponseNotConfigured(Request request, StubMapping matchingMapping) {
+        if (matchingMapping == NOT_CONFIGURED) {
+            notifier().info("No mapping found matching URL " + request.getUrl());
+        }
+    }
+
+    @Override
+    public void addMapping(StubMapping mapping) {
+        if (mapping.isInScenario()) {
+            scenarioMap.putIfAbsent(mapping.getScenarioName(), Scenario.inStartedState());
+            Scenario scenario = scenarioMap.get(mapping.getScenarioName());
+            mapping.setScenario(scenario);
+        }
+
+        mappings.add(mapping);
+    }
+
+    @Override
+    public void reset() {
+        mappings.clear();
         scenarioMap.clear();
-	}
-	
-	@Override
-	public void resetScenarios() {
-		for (Scenario scenario: scenarioMap.values()) {
-			scenario.reset();
-		}
-	}
+    }
+
+    @Override
+    public void resetScenarios() {
+        for (Scenario scenario : scenarioMap.values()) {
+            scenario.reset();
+        }
+    }
 
     @Override
     public List<StubMapping> getAll() {
@@ -82,11 +79,10 @@ public class InMemoryStubMappings implements StubMappings {
     }
 
     private Predicate<StubMapping> mappingMatchingAndInCorrectScenarioState(final Request request) {
-		return new Predicate<StubMapping>() {
-			public boolean apply(StubMapping mapping) {
-				return mapping.getRequest().isMatchedBy(request) &&
-				(mapping.isIndependentOfScenarioState() || mapping.requiresCurrentScenarioState());
-			}
-		};
-	}
+        return new Predicate<StubMapping>() {
+            public boolean apply(StubMapping mapping) {
+                return mapping.getRequest().isMatchedBy(request) && (mapping.isIndependentOfScenarioState() || mapping.requiresCurrentScenarioState());
+            }
+        };
+    }
 }

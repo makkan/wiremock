@@ -20,21 +20,18 @@ import com.github.tomakehurst.wiremock.core.StubServer;
 import static com.github.tomakehurst.wiremock.common.LocalNotifier.notifier;
 
 public class StubRequestHandler extends AbstractRequestHandler {
-	
-	private final StubServer stubServer;
 
-	public StubRequestHandler(StubServer stubServer, ResponseRenderer responseRenderer) {
-		super(responseRenderer);
-		this.stubServer = stubServer;
-	}
-	
-	@Override
-	public ResponseDefinition handleRequest(Request request) {
+    private final StubServer stubServer;
+
+    public StubRequestHandler(StubServer stubServer, ResponseRenderer responseRenderer) {
+        super(responseRenderer);
+        this.stubServer = stubServer;
+    }
+
+    @Override
+    public ResponseDefinition handleRequest(Request request) {
         notifier().info("Received request to " + request.getUrl());
-
-		ResponseDefinition responseDef = stubServer.serveStubFor(request);
-
-		return responseDef;
-	}
-
+        ResponseDefinition responseDef = stubServer.serveStubFor(request);
+        return responseDef;
+    }
 }

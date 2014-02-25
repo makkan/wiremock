@@ -29,38 +29,42 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.lang.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+
 import static com.github.tomakehurst.wiremock.common.LocalNotifier.notifier;
 import static com.github.tomakehurst.wiremock.http.RequestMethod.ANY;
 import static com.github.tomakehurst.wiremock.matching.ValuePattern.matching;
 import static com.google.common.collect.Iterables.*;
 import static com.google.common.collect.Maps.newLinkedHashMap;
 
-@JsonSerialize(include=Inclusion.NON_NULL)
+@JsonSerialize(include = Inclusion.NON_NULL)
 public class RequestPattern {
 
     private String urlPattern;
-	private String url;
-	private RequestMethod method;
-	private Map<String, ValuePattern> headerPatterns;
-	private List<ValuePattern> bodyPatterns;
-	
-	public RequestPattern(RequestMethod method, String url, Map<String, ValuePattern> headerPatterns) {
-		this.url = url;
-		this.method = method;
-		this.headerPatterns = headerPatterns;
-	}
-	
-	public RequestPattern(RequestMethod method) {
-		this.method = method;
-	}
-	
-	public RequestPattern(RequestMethod method, String url) {
-		this.url = url;
-		this.method = method;
-	}
-	
-	public RequestPattern() {
-	}
+    private String urlCapture;
+    private String url;
+    private RequestMethod method;
+    private Map<String, ValuePattern> headerPatterns;
+    private List<ValuePattern> bodyPatterns;
+
+    public RequestPattern(RequestMethod method, String url, Map<String, ValuePattern> headerPatterns) {
+        this.url = url;
+        this.method = method;
+        this.headerPatterns = headerPatterns;
+    }
+
+    public RequestPattern(RequestMethod method) {
+        this.method = method;
+    }
+
+    public RequestPattern(RequestMethod method, String url) {
+        this.url = url;
+        this.method = method;
+    }
+
+    public RequestPattern() {
+    }
 
     public static RequestPattern everything() {
         RequestPattern requestPattern = new RequestPattern(RequestMethod.ANY);
@@ -73,39 +77,42 @@ public class RequestPattern {
     }
 
     private void assertIsInValidState() {
-		if (url != null && urlPattern != null) {
-			throw new IllegalStateException("URL and URL pattern may not be set simultaneously");
-		}
-	}
-	
-	public boolean isMatchedBy(Request request) {
-		return (urlIsMatch(request) &&
-				methodMatches(request) &&
-                requiredAbsentHeadersAreNotPresentIn(request) &&
-				headersMatch(request) &&
-				bodyMatches(request));
-	}
-	
-	private boolean urlIsMatch(Request request) {
-		String candidateUrl = request.getUrl();
-		boolean matched;
-		if (urlPattern == null) {
-			matched = url.equals(candidateUrl);
-		} else {
-			matched = candidateUrl.matches(urlPattern);
-		}
-		
-		return matched;
-	}
-	
-	private boolean methodMatches(Request request) {
-		boolean matched = method == ANY || request.getMethod() == method;
-		if (!matched) {
-			notifier().info(String.format("URL %s is match, but method %s is not", request.getUrl(), request.getMethod()));
-		}
-		
-		return matched;
-	}
+        if (url != null && urlPattern != null && urlCapture != null) {
+            throw new IllegalStateException("URL, URL pattern and URL capture may not be set simultaneously");
+        } else if (url != null && urlPattern != null) {
+            throw new IllegalStateException("URL and URL pattern may not be set simultaneously");
+        } else if (url != null && urlCapture != null) {
+            throw new IllegalStateException("URL and URL capture may not be set simultaneously");
+        } else if (urlPattern != null && urlCapture != null) {
+            throw new IllegalStateException("URL pattern and URL capture may not be set simultaneously");
+        }
+    }
+
+    public boolean isMatchedBy(Request request) {
+        return (urlIsMatch(request) && methodMatches(request) && requiredAbsentHeadersAreNotPresentIn(request) && headersMatch(request) && bodyMatches(request));
+    }
+
+    private boolean urlIsMatch(Request request) {
+        String candidateUrl = request.getUrl();
+        boolean matched;
+        if (urlPattern == null && urlCapture == null) {
+            matched = url.equals(candidateUrl);
+        } else if (urlCapture != null) {
+            matched = candidateUrl.matches(url);
+        } else {
+            matched = candidateUrl.matches(urlPattern);
+        }
+        return matched;
+    }
+
+    private boolean methodMatches(Request request) {
+        boolean matched = method == ANY || request.getMethod() == method;
+        if (!matched) {
+            notifier().info(String.format("URL %s is match, but method %s is not", request.getUrl(), request.getMethod()));
+        }
+
+        return matched;
+    }
 
     private boolean requiredAbsentHeadersAreNotPresentIn(final Request request) {
         return !any(requiredAbsentHeaderKeys(), new Predicate<String>() {
@@ -122,11 +129,10 @@ public class RequestPattern {
 
         return ImmutableSet.copyOf(filter(transform(headerPatterns.entrySet(), TO_KEYS_WHERE_VALUE_ABSENT), REMOVING_NULL));
     }
-	
-	private boolean headersMatch(final Request request) {
-        return noHeadersAreRequiredToBePresent() ||
-                all(headerPatterns.entrySet(), matchHeadersIn(request));
-	}
+
+    private boolean headersMatch(final Request request) {
+        return noHeadersAreRequiredToBePresent() || all(headerPatterns.entrySet(), matchHeadersIn(request));
+    }
 
     private boolean noHeadersAreRequiredToBePresent() {
         return headerPatterns == null || allHeaderPatternsSpecifyAbsent();
@@ -141,135 +147,94 @@ public class RequestPattern {
     }
 
     private boolean bodyMatches(Request request) {
-		if (bodyPatterns == null) {
-			return true;
-		}
-		
-		boolean matches = all(bodyPatterns, matching(request.getBodyAsString()));
-		
-		if (!matches) {
-			notifier().info(String.format("URL %s is match, but body is not: %s", request.getUrl(), request.getBodyAsString()));
-		}
-		
-		return matches;
-	}
-	
-	public String getUrlPattern() {
-		return urlPattern;
-	}
+        if (bodyPatterns == null) {
+            return true;
+        }
 
-	public void setUrlPattern(String urlPattern) {
-		this.urlPattern = urlPattern;
-		assertIsInValidState();
-	}
-	
-	public RequestMethod getMethod() {
-		return method;
-	}
+        boolean matches = all(bodyPatterns, matching(request.getBodyAsString()));
 
-	public void setMethod(RequestMethod method) {
-		this.method = method;
-	}
+        if (!matches) {
+            notifier().info(String.format("URL %s is match, but body is not: %s", request.getUrl(), request.getBodyAsString()));
+        }
 
-	public Map<String, ValuePattern> getHeaders() {
-		return headerPatterns;
-	}
-	
-	public void addHeader(String key, ValuePattern pattern) {
-		if (headerPatterns == null) {
-			headerPatterns = newLinkedHashMap();
-		}
-		
-		headerPatterns.put(key, pattern);
-	}
-	
-	public void setHeaders(Map<String, ValuePattern> headers) {
-		this.headerPatterns = headers;
-	}
+        return matches;
+    }
 
-	public String getUrl() {
-		return url;
-	}
+    public String getUrlPattern() {
+        return urlPattern;
+    }
 
-	public void setUrl(String url) {
-		this.url = url;
-		assertIsInValidState();
-	}
-	
-	public List<ValuePattern> getBodyPatterns() {
-		return bodyPatterns;
-	}
+    public void setUrlPattern(String urlPattern) {
+        this.urlPattern = urlPattern;
+        assertIsInValidState();
+    }
 
-	public void setBodyPatterns(List<ValuePattern> bodyPatterns) {
-		this.bodyPatterns = bodyPatterns;
-	}
+    public RequestMethod getMethod() {
+        return method;
+    }
 
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result
-				+ ((bodyPatterns == null) ? 0 : bodyPatterns.hashCode());
-		result = prime * result + ((headerPatterns == null) ? 0 : headerPatterns.hashCode());
-		result = prime * result + ((method == null) ? 0 : method.hashCode());
-		result = prime * result + ((url == null) ? 0 : url.hashCode());
-		result = prime * result
-				+ ((urlPattern == null) ? 0 : urlPattern.hashCode());
-		return result;
-	}
+    public void setMethod(RequestMethod method) {
+        this.method = method;
+    }
 
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
-			return true;
-		}
-		if (obj == null) {
-			return false;
-		}
-		if (getClass() != obj.getClass()) {
-			return false;
-		}
-		RequestPattern other = (RequestPattern) obj;
-		if (bodyPatterns == null) {
-			if (other.bodyPatterns != null) {
-				return false;
-			}
-		} else if (!bodyPatterns.equals(other.bodyPatterns)) {
-			return false;
-		}
-		if (headerPatterns == null) {
-			if (other.headerPatterns != null) {
-				return false;
-			}
-		} else if (!headerPatterns.equals(other.headerPatterns)) {
-			return false;
-		}
-		if (method != other.method) {
-			return false;
-		}
-		if (url == null) {
-			if (other.url != null) {
-				return false;
-			}
-		} else if (!url.equals(other.url)) {
-			return false;
-		}
-		if (urlPattern == null) {
-			if (other.urlPattern != null) {
-				return false;
-			}
-		} else if (!urlPattern.equals(other.urlPattern)) {
-			return false;
-		}
-		return true;
-	}
+    public Map<String, ValuePattern> getHeaders() {
+        return headerPatterns;
+    }
 
-	@Override
-	public String toString() {
-		return Json.write(this);
-	}
+    public void addHeader(String key, ValuePattern pattern) {
+        if (headerPatterns == null) {
+            headerPatterns = newLinkedHashMap();
+        }
 
-    private static final Function<Map.Entry<String,ValuePattern>,String> TO_KEYS_WHERE_VALUE_ABSENT = new Function<Map.Entry<String, ValuePattern>, String>() {
+        headerPatterns.put(key, pattern);
+    }
+
+    public void setHeaders(Map<String, ValuePattern> headers) {
+        this.headerPatterns = headers;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+        assertIsInValidState();
+    }
+
+    public String getUrlCapture() {
+        return urlCapture;
+    }
+
+    public void setUrlCapture(String urlCapture) {
+        this.urlCapture = urlCapture;
+        assertIsInValidState();
+    }
+
+    public List<ValuePattern> getBodyPatterns() {
+        return bodyPatterns;
+    }
+
+    public void setBodyPatterns(List<ValuePattern> bodyPatterns) {
+        this.bodyPatterns = bodyPatterns;
+    }
+
+    @Override
+    public int hashCode() {
+        return HashCodeBuilder.reflectionHashCode(this);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return EqualsBuilder.reflectionEquals(this, obj);
+    }
+
+    @Override
+    public String toString() {
+        return Json.write(this);
+    }
+
+    private static final Function<Map.Entry<String, ValuePattern>, String> TO_KEYS_WHERE_VALUE_ABSENT = new Function<Map.Entry<String, ValuePattern>, String>() {
         public String apply(Map.Entry<String, ValuePattern> input) {
             return input.getValue().nullSafeIsAbsent() ? input.getKey() : null;
         }
@@ -291,11 +256,9 @@ public class RequestPattern {
                 boolean match = header.hasValueMatching(headerValuePattern);
 
                 if (!match) {
-                    notifier().info(String.format(
-                            "URL %s is match, but header %s is not. For a match, value should %s",
-                            request.getUrl(),
-                            key,
-                            headerValuePattern.toString()));
+                    notifier().info(
+                            String.format("URL %s is match, but header %s is not. For a match, value should %s", request.getUrl(), key,
+                                    headerValuePattern.toString()));
                 }
 
                 return match;

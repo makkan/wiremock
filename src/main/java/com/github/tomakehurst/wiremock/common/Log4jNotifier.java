@@ -18,23 +18,26 @@ package com.github.tomakehurst.wiremock.common;
 import org.apache.log4j.Logger;
 
 public class Log4jNotifier implements Notifier {
-	
-	private static final Logger log = Logger.getLogger(Log4jNotifier.class);
 
-	@Override
-	public void info(String message) {
-		log.info(message);
-		
-	}
+    private static final Logger log = Logger.getLogger(Log4jNotifier.class);
 
-	@Override
-	public void error(String message) {
-		log.error(message);
-		
-	}
+    @Override
+    public void info(Object obj) {
+        log.info(obj.toString());
+    }
 
-	@Override
-	public void error(String message, Throwable t) {
-		log.error(message, t);
-	}
+    @Override
+    public void info(String message) {
+        log.info(message);
+    }
+
+    @Override
+    public void error(String message) {
+        log.error(message);
+    }
+
+    @Override
+    public void error(String message, Throwable t) {
+        log.error(message, t);
+    }
 }

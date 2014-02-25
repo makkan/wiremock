@@ -25,15 +25,25 @@ import com.github.tomakehurst.wiremock.verification.VerificationResult;
 
 public interface Admin {
 
-	void addStubMapping(StubMapping stubMapping);
+    void addStubMapping(StubMapping stubMapping);
+
     ListStubMappingsResult listAllStubMappings();
+
     void saveMappings();
-	void resetMappings();
-	void resetScenarios();
+
+    void resetMappings();
+
+    void resetScenarios();
+
     void resetToDefaultMappings();
-	VerificationResult countRequestsMatching(RequestPattern requestPattern);
+
+    VerificationResult countRequestsMatching(RequestPattern requestPattern);
+
     FindRequestsResult findRequestsMatching(RequestPattern requestPattern);
-	void updateGlobalSettings(GlobalSettings settings);
+
+    void updateGlobalSettings(GlobalSettings settings);
+
     void addSocketAcceptDelay(RequestDelaySpec spec);
+
     void shutdownServer();
 }
