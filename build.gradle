@@ -1,7 +1,7 @@
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'maven'
-//apply plugin: 'signing'
+apply plugin: 'signing'
 apply plugin: 'idea'
 apply plugin: 'project-report'
 
@@ -53,8 +53,10 @@ test { // Set the timezone for testing somewhere other than my machine to increa
 
 buildscript {
     repositories {
-        maven {  url "http://mvn-repo.hm.com/nexus/content/groups/comhmjoshua-group"  }
-        //mavenCentral()
+        maven {
+            url "https://oss.sonatype.org"
+        }
+        mavenCentral()
     }
 
     dependencies {
